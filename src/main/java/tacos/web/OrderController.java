@@ -1,14 +1,14 @@
 package tacos.web;
 import javax.validation.Valid;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 
 import tacos.Order;
@@ -22,11 +22,14 @@ public class OrderController {
   
   private OrderRepository orderRepo;
 
-  public OrderController(OrderRepository orderRepo) {
+  private OrderProps props;
+
+  public OrderController(OrderRepository orderRepo, OrderProps props) {
     this.orderRepo = orderRepo;
+    this.props = props;
   }
-  
-  @GetMapping("/current")
+
+    @GetMapping("/current")
   public String orderForm(@AuthenticationPrincipal User user, 
       @ModelAttribute Order order) {
     if (order.getDeliveryName() == null) {
@@ -66,5 +69,13 @@ public class OrderController {
     return "redirect:/";
   }
   // end::processOrderWithAuthenticationPrincipal[]
+
+  @GetMapping
+  public String ordersForUser(@AuthenticationPrincipal User user, Model model) {
+
+    Pageable pageable = PageRequest.of(0, props.getPageSize());
+    model.addAttribute("orders", orderRepo.findByUserOrderByPlacedAtDesc(user, pageable));
+    return "orderList";
+  }
 
 }
